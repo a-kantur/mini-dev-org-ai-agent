@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Dev Org Agent</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fb; color: #1b1f2a; }
+      .container { max-width: 900px; margin: 24px auto; background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); }
+      h1, h2 { margin: 0 0 16px; }
+      input, textarea { width: 100%; font-size: 16px; padding: 10px; border-radius: 6px; border: 1px solid #d5dbe9; }
+      button { cursor: pointer; background: #3366ff; border: none; border-radius: 6px; color: white; padding: 10px 18px; font-size: 16px; }
+      .output { margin-top: 20px; }
+      .card { background: #f8faff; border: 1px solid #dce9ff; border-radius: 8px; padding: 14px; margin-bottom: 12px; overflow-wrap: break-word; word-break: break-word; }
+      .card pre { margin: 0; white-space: pre-wrap; font-family: Arial, sans-serif; }
+      .spinner { margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Mini Dev Org Agent</h1>
+      <p>Enter a topic and get responses from Craig, Kyle, Jordan, plus a 5-line conversation (no PM).</p>
+      <label for="topicInput">Topic</label>
+      <input id="topicInput" type="text" placeholder="e.g., migrate to microservices for reliability" />
+      <button id="submitBtn">Generate responses</button>
+      <div class="spinner" id="spinner" style="display:none">Generating... please wait.</div>
+      <div class="output" id="output"></div>
+    </div>
+
+    <script>
+      const submitBtn = document.getElementById('submitBtn');
+      const topicInput = document.getElementById('topicInput');
+      const outputEl = document.getElementById('output');
+      const spinner = document.getElementById('spinner');
+
+      submitBtn.addEventListener('click', async () => {
+        const topic = topicInput.value.trim();
+        if (!topic) {
+          alert('Please type a topic');
+          return;
+        }
+
+        outputEl.innerHTML = '';
+        spinner.style.display = 'block';
+        try {
+          const response = await fetch('/api/evaluate-topic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic })
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            outputEl.innerHTML = `<div class="card"><strong>Error:</strong> ${data.error || 'Unknown error'}</div>`;
+            return;
+          }
+
+          const cards = data.personas.map(p => `<div class="card"><h2>${p.persona}</h2><pre>${escapeHtml(p.text)}</pre></div>`).join('');
+          const convo = `<div class="card"><h2>Conversation (5 lines, no PM)</h2><pre>${escapeHtml(data.conversation)}</pre></div>`;
+          outputEl.innerHTML = cards + convo;
+        } catch (error) {
+          outputEl.innerHTML = `<div class="card"><strong>Network error:</strong> ${error.message}</div>`;
+        } finally {
+          spinner.style.display = 'none';
+        }
+      });
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+    </script>
+  </body>
+</html>
