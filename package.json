@@ -1,8 +1,11 @@
 {
   "name": "mini-dev-org-app",
   "version": "1.0.0",
-  "description": "Persona-based developer feedback agent",
+  "description": "Persona-based developer feedback agent with RAG",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
