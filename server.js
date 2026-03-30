@@ -3,12 +3,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { OpenAI } = require('openai');
+const { initializeKnowledgeBase, findRelevantContext } = require('./rag');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
@@ -31,8 +32,20 @@ const personaSystemPrompt = {
 };
 
 async function generatePersonaText(persona, topic) {
-  const systemPrompt = personaSystemPrompt[persona] || `You are ${persona}.`;
-  const userPrompt = `Topic: ${topic}\n\nProduce 3-4 sentences with persona-specific considerations and one recommendation sentence.`;
+  let systemPrompt = personaSystemPrompt[persona] || `You are ${persona}.`;
+  let userPrompt = `Topic: ${topic}\n\nProduce 3-4 sentences with persona-specific considerations and one recommendation sentence.`;
+
+  if (persona === 'Craig') {
+    const topicLower = topic.toLowerCase();
+    if (topicLower.includes('product') || topicLower.includes('pm') || topicLower.includes('discovery') || topicLower.includes('validation')) {
+      const ragContext = await findRelevantContext(topic, 'product management', 3);
+      if (ragContext) {
+        systemPrompt += `\n\nYou have access to internal product management knowledge. When relevant, reference these insights: ${ragContext.context}`;
+        userPrompt += `\n\nPlease incorporate relevant insights from the provided knowledge base.`;
+        console.log(`RAG: Found ${ragContext.sources.length} sources for Craig on topic: ${topic}`);
+      }
+    }
+  }
 
   if (!USE_LLM) {
     return {
@@ -135,6 +148,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+initializeKnowledgeBase().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
 });
