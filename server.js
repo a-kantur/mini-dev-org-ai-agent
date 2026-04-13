@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { OpenAI } = require('openai');
 const { initializeKnowledgeBase, findRelevantContext } = require('./rag');
+const { moderateInput } = require('./moderation');
 
 const app = express();
 app.use(express.json());
@@ -120,6 +121,14 @@ app.post('/api/evaluate-topic', async (req, res) => {
     const { topic } = req.body;
     if (!topic || topic.toString().trim().length === 0) {
       return res.status(400).json({ error: 'A topic is required.' });
+    }
+
+    const moderation = moderateInput(topic);
+    if (!moderation.safe) {
+      return res.status(400).json({ 
+        error: moderation.response,
+        moderation: { reason: moderation.reason, details: moderation.details }
+      });
     }
 
     const personas = ['Craig', 'Kyle', 'Jordan'];
