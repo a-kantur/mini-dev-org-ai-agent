@@ -9,7 +9,7 @@ const unsafeKeywords = [
   'hack', 'exploit', 'ddos', 'spam', 'phishing', 'malware', 'virus',
   'bypass', 'crack', 'stolen', 'steal', 'illegal', 'fraud', 'scam',
   'bomb', 'attack', 'threat', 'kill', 'suicide', 'harm', 'abuse',
-  'racist', 'sexist', 'homophobic', 'nazi', 'hate', 'harass'
+  'racist', 'sexist', 'homophobic', 'nazi', 'hate', 'harass', 'molotov'
 ];
 
 const safeTemplates = {
